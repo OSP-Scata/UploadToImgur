@@ -19,7 +19,7 @@ def open_file():
 def upload_to_imgur():
     url = "https://api.imgur.com/3/image"
     try:
-        with open('client_id.txt', "rb") as id_file:
+        with open('client_id.txt', "r") as id_file:
             client_id = id_file.readline()
     except FileNotFoundError:
         try:
@@ -44,7 +44,9 @@ def upload_to_imgur():
                     ready.insert(tk.END, "Failed to upload image:\n", response.text)
                     ready.configure(state=tk.DISABLED)
         except:
+            ready.configure(state=tk.NORMAL)
             ready.insert(tk.END, 'Введите ваш ID!')
+            ready.configure(state=tk.DISABLED)
 
 
 root = tk.Tk()
