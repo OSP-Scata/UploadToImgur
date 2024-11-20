@@ -5,53 +5,60 @@ from tkinter import filedialog
 
 
 def open_file():
-    file = filedialog.askopenfile(mode='r', filetypes=[('JPEG', '*.jpg'), ('PNG', '*.png'), ('GIF', '*.gif')])
-    if file:
-        global image_path
-        image_path = os.path.abspath(file.name)
-        filename = os.path.basename(file.name)
-        selected_file['text'] = filename
+    files = filedialog.askopenfilenames(filetypes=[('JPEG', '*.jpg'), ('PNG', '*.png'), ('GIF', '*.gif')])
+    if files:
+        global lst
+        lst = list(files)
+        for file in lst:
+            filename = os.path.basename(file)
+            selected_file.configure(state=tk.NORMAL)
+            selected_file.insert(tk.END, filename + '\n')
+            selected_file.configure(state=tk.DISABLED)
 
 
 def upload_to_imgur():
     url = "https://api.imgur.com/3/image"
-    client_id = imgur_id.get().rstrip('\n')
-    headers = {"Authorization": f"Client-ID {client_id}"}
-    with open(image_path, "rb") as image_file:
-        payload = {"image": image_file.read()}
+    try:
+        with open('client_id.txt', "rb") as id_file:
+            client_id = id_file.readline()
+    except FileNotFoundError:
+        try:
+            client_id = imgur_id.get().rstrip('\n')
+            with open('client_id.txt', 'w') as f:
+                f.write(client_id)
+            headers = {"Authorization": f"Client-ID {client_id}"}
+            for file in lst:
+                image_path = os.path.abspath(file)
+                with open(image_path, "rb") as image_file:
+                    payload = {"image": image_file.read()}
 
-    response = requests.post(url, headers=headers, files=payload)
-    if response.status_code == 200:
-        data = response.json()
-        image_url = data["data"]["link"]
-        ready.configure(state=tk.NORMAL)
-        ready.insert(tk.END, f"[img]{image_url}[/img]")
-        ready.configure(state=tk.DISABLED)
-    else:
-        ready.configure(state=tk.NORMAL)
-        ready.insert(tk.END, "Failed to upload image:\n", response.text)
-        ready.configure(state=tk.DISABLED)
+                response = requests.post(url, headers=headers, files=payload)
+                if response.status_code == 200:
+                    data = response.json()
+                    image_url = data["data"]["link"]
+                    ready.configure(state=tk.NORMAL)
+                    ready.insert(tk.END, f"[img]{image_url}[/img]\n")
+                    ready.configure(state=tk.DISABLED)
+                else:
+                    ready.configure(state=tk.NORMAL)
+                    ready.insert(tk.END, "Failed to upload image:\n", response.text)
+                    ready.configure(state=tk.DISABLED)
+        except:
+            ready.insert(tk.END, 'Введите ваш ID!')
 
 
 root = tk.Tk()
 
-
-def write(text_widget, text):
-    text_widget.configure(state=tk.NORMAL)
-    text_widget.insert(tk.END, text)
-    text_widget.configure(state=tk.DISABLED)
-
-
 root.title('Загрузка изображения на Imgur')
-root.geometry('400x300')
+root.geometry('400x400')
 
 import_button = tk.Button(root, text='Импорт', command=open_file)
 import_button.pack(padx=6, pady=6)
 
-selected = tk.Label(text='Выбранный файл:')
+selected = tk.Label(text='Выбранные файлы:')
 selected.pack(padx=3, pady=3)
-selected_file = tk.Label(root)
-selected_file.pack(padx=6, pady=6)
+selected_file = tk.Text(width=40, height=5, state=tk.DISABLED)
+selected_file.pack()
 
 enter_id = tk.Label(root, text='Ваш Client ID на Imgur:')
 enter_id.pack(padx=6, pady=6)
