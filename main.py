@@ -1,7 +1,8 @@
-import requests
 import os
 import tkinter as tk
 from tkinter import filedialog
+
+import requests
 
 
 def open_file():
@@ -16,37 +17,46 @@ def open_file():
             selected_file.configure(state=tk.DISABLED)
 
 
+def upload(lst, url, headers):
+    for file in lst:
+        image_path = os.path.abspath(file)
+        with open(image_path, "rb") as image_file:
+            payload = {"image": image_file.read()}
+
+        response = requests.post(url, headers=headers, files=payload)
+        if response.status_code == 200:
+            data = response.json()
+            image_url = data["data"]["link"]
+            ready.configure(state=tk.NORMAL)
+            ready.insert(tk.END, f"[img]{image_url}[/img]\n")
+            ready.configure(state=tk.DISABLED)
+        else:
+            ready.configure(state=tk.NORMAL)
+            ready.insert(tk.END, "Failed to upload image:\n", response.text)
+            ready.configure(state=tk.DISABLED)
+
+
 def upload_to_imgur():
     url = "https://api.imgur.com/3/image"
     try:
         with open('client_id.txt', "r") as id_file:
             client_id = id_file.readline()
+            headers = {"Authorization": f"Client-ID {client_id}"}
+            upload(lst, url, headers)
     except FileNotFoundError:
-        try:
-            client_id = imgur_id.get().rstrip('\n')
+        client_id = imgur_id.get().rstrip('\n')
+        if client_id:
             with open('client_id.txt', 'w') as f:
                 f.write(client_id)
             headers = {"Authorization": f"Client-ID {client_id}"}
-            for file in lst:
-                image_path = os.path.abspath(file)
-                with open(image_path, "rb") as image_file:
-                    payload = {"image": image_file.read()}
-
-                response = requests.post(url, headers=headers, files=payload)
-                if response.status_code == 200:
-                    data = response.json()
-                    image_url = data["data"]["link"]
-                    ready.configure(state=tk.NORMAL)
-                    ready.insert(tk.END, f"[img]{image_url}[/img]\n")
-                    ready.configure(state=tk.DISABLED)
-                else:
-                    ready.configure(state=tk.NORMAL)
-                    ready.insert(tk.END, "Failed to upload image:\n", response.text)
-                    ready.configure(state=tk.DISABLED)
-        except:
+            upload(lst, url, headers)
+        else:
             ready.configure(state=tk.NORMAL)
-            ready.insert(tk.END, 'Введите ваш ID!')
+            ready.insert(tk.END, 'Введите Client ID!')
             ready.configure(state=tk.DISABLED)
+
+
+# print('Client ID:', client_id)
 
 
 root = tk.Tk()
