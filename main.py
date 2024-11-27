@@ -1,8 +1,16 @@
 import os
 import tkinter as tk
 from tkinter import filedialog
-
 import requests
+
+
+def keypress(event):
+        if event.keycode == 86:
+            event.widget.event_generate('<<Paste>>')
+        elif event.keycode == 67:
+            event.widget.event_generate('<<Copy>>')
+        elif event.keycode == 88:
+            event.widget.event_generate('<<Cut>>')
 
 
 def open_file():
@@ -63,7 +71,7 @@ root = tk.Tk()
 
 root.title('Загрузка изображения на Imgur')
 root.geometry('400x400')
-
+root.bind("<Control-KeyPress>", keypress)
 import_button = tk.Button(root, text='Импорт', command=open_file)
 import_button.pack(padx=6, pady=6)
 
